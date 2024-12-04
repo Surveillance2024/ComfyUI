@@ -9,7 +9,7 @@ from comfy.cli_args import args
 from app.logger import setup_logger
 
 
-setup_logger(verbose=args.verbose)
+setup_logger(log_level=args.verbose)
 
 
 def execute_prestartup_script():
@@ -71,6 +71,7 @@ if os.name == "nt":
 if __name__ == "__main__":
     if args.cuda_device is not None:
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.cuda_device)
+        os.environ['HIP_VISIBLE_DEVICES'] = str(args.cuda_device)
         logging.info("Set cuda device to: {}".format(args.cuda_device))
 
     if args.deterministic:
@@ -153,14 +154,16 @@ def prompt_worker(q, server):
         if need_gc:
             current_time = time.perf_counter()
             if (current_time - last_gc_collect) > gc_collect_interval:
-                comfy.model_management.cleanup_models()
                 gc.collect()
                 comfy.model_management.soft_empty_cache()
                 last_gc_collect = current_time
                 need_gc = False
 
 async def run(server, address='', port=8188, verbose=True, call_on_start=None):
-    await asyncio.gather(server.start(address, port, verbose, call_on_start), server.publish_loop())
+    addresses = []
+    for addr in address.split(","):
+        addresses.append((addr, port))
+    await asyncio.gather(server.start_multi_address(addresses, call_on_start), server.publish_loop())
 
 
 def hijack_progress(server):
@@ -248,6 +251,8 @@ if __name__ == "__main__":
             import webbrowser
             if os.name == 'nt' and address == '0.0.0.0':
                 address = '127.0.0.1'
+            if ':' in address:
+                address = "[{}]".format(address)
             webbrowser.open(f"{scheme}://{address}:{port}")
         call_on_start = startup_server
 

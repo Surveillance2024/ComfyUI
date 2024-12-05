@@ -132,26 +132,55 @@ def choose_date(temperature):
 
     return season_num, timing_num
 
-def generate_prompt():
+def generate_prompt(temp_vector=None):
+    """
+    temp_vector = {
+        "timestamp"
+        "num_people",
+        "emotions_list",
+        "num_words",
+        "temperature",
+    }
+    """
 
-    global emotions, temperature_r
-    for temperature, emotions_vec in fetch_data():
-        emotions = tran_dict(emotions_vec)
-        temperature_r = temperature
-        # print(f"Temperature: {temperature}, Emotions: {emotions_vec}")
-        temperature_str = str(temperature) #str
-        dominant_emotion = get_dominant_emotion(emotions_vec)
-        cloud_types, color = choose_cloud_and_color(dominant_emotion) # str
-        season_num, timing_num = choose_date(temperature) 
-        season = season_list[season_num] #str
-        timing = timing_list[timing_num] #str
+    if temp_vector is None:
+        print("No input data")
+        global emotions, temperature_r
+        for temperature, emotions_vec in fetch_data():
+            emotions = tran_dict(emotions_vec)
+            temperature_r = temperature
+            # print(f"Temperature: {temperature}, Emotions: {emotions_vec}")
+            temperature_str = str(temperature) #str
+            dominant_emotion = get_dominant_emotion(emotions_vec)
+            cloud_types, color = choose_cloud_and_color(dominant_emotion) # str
+            season_num, timing_num = choose_date(temperature) 
+            season = season_list[season_num] #str
+            timing = timing_list[timing_num] #str
 
-        prompt = "weather forecast, no people, only show the sky, fantasy style, " + temperature_str + " degrees Celsius, " + cloud_types + color + season + timing 
+            prompt = "weather forecast, no people, only show the sky, fantasy style, " + temperature_str + " degrees Celsius, " + cloud_types + color + season + timing 
 
-        # print(prompt)
+            # print(prompt)
 
-        # weather forecast, no people, only show the sky, fantasy style, 33 degrees Celsius, cirrus, Bright green, spring noon, 
-        return prompt
+            # weather forecast, no people, only show the sky, fantasy style, 33 degrees Celsius, cirrus, Bright green, spring noon, 
+            return prompt
+        else:
+            print("Received input data (temp_vector)")
+            temperature = temp_vector["temperature"]
+            emotions_vec = temp_vector["emotions_list"]
+
+            emotions = tran_dict(emotions_vec)
+            temperature_r = temperature
+            # print(f"Temperature: {temperature}, Emotions: {emotions_vec}")
+            temperature_str = str(temperature) #str
+            dominant_emotion = get_dominant_emotion(emotions_vec)
+            cloud_types, color = choose_cloud_and_color(dominant_emotion) # str
+            season_num, timing_num = choose_date(temperature) 
+            season = season_list[season_num] #str
+            timing = timing_list[timing_num] #str
+
+            prompt = "weather forecast, no people, only show the sky, fantasy style, " + temperature_str + " degrees Celsius, " + cloud_types + color + season + timing 
+
+            return prompt
 
 def tran_dict(emotions_vec):
     b = {}

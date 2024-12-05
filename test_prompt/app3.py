@@ -186,155 +186,149 @@ def draw_temperature(frame):
     return combined_frame
 
 # 設定儲存路徑
-output_dir = '/Cloud_Image/ComfyUI/test_prompt/no_style'
+output_dir = 'ComfyUI/test_prompt/no_style'
 
 #############################################
 # New version of ComfyUI image generation API
-from fastapi import FastAPI
+# from fastapi import FastAPI
 
-app = FastAPI()
+# app = FastAPI()
 
-import uvicorn
-import threading
+# import uvicorn
+# import threading
 
-def start_fastapi():
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, log_level="info")
+# def start_fastapi():
+#     uvicorn.run("app:app", host="0.0.0.0", port=8000, log_level="info")
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+# @app.get("/")
+# def read_root():
+#     return {"Hello": "World"}
 
-@app.post("/generate_image")
-def generate_image(temp_vector):
-    """
-    temp_vector = {
-        "timestamp"
-        "num_people",
-        "emotions_list",
-        "num_words",
-        "temperature",
-    }
-    """
+# @app.post("/generate_image")
+# def generate_image(temp_vector):
+#     """
+#     temp_vector = {
+#         "timestamp"
+#         "num_people",
+#         "emotions_list",
+#         "num_words",
+#         "temperature",
+#     }
+#     """
 
-    with open("workflow_api.json") as workflow_api:
-        prompt = json.load(workflow_api)
-    print("workflow_api open")
+#     with open("workflow_api.json") as workflow_api:
+#         prompt = json.load(workflow_api)
+#     print("workflow_api open")
 
-    # ws = websocket.WebSocket()
-    # ws.connect("ws://{}/ws?clientId={}".format(server_address, client_id))
-    # print(" ws.connect")
+#     # ws = websocket.WebSocket()
+#     # ws.connect("ws://{}/ws?clientId={}".format(server_address, client_id))
+#     # print(" ws.connect")
 
-    interpolator = InterpolatorInterface() # Initialize image to video
+#     interpolator = InterpolatorInterface() # Initialize image to video
 
-    # ComfyUI 製圖
-    # Send the temp_vector to generate_prompt
-    prompt_text = generate_prompt(temp_vector) 
+#     # ComfyUI 製圖
+#     # Send the temp_vector to generate_prompt
+#     prompt_text = generate_prompt(temp_vector) 
 
-    prompt["3"]["inputs"]["seed"] = random.randint(0,999999999999999)
-    prompt["6"]["inputs"]["text"] = prompt_text        
-    queue_prompt(prompt)['prompt_id']  # 將提示加入隊列（假設這個函數已經實現）
-    print(prompt_text)
+#     prompt["3"]["inputs"]["seed"] = random.randint(0,999999999999999)
+#     prompt["6"]["inputs"]["text"] = prompt_text        
+#     queue_prompt(prompt)['prompt_id']  # 將提示加入隊列（假設這個函數已經實現）
+#     print(prompt_text)
 
-    # 設定 output 資料夾的路徑
-    output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'output'))
-    # 讀取最新的兩張圖片檔案名稱
-    latest_images = get_latest_images(output_dir)
-    # print(latest_images[0])
-    # 拼接字串
-    image_path0 = "/Cloud_Image/ComfyUI/output/" + latest_images[0]
-    image_path1 = "/Cloud_Image/ComfyUI/output/" + latest_images[1]
+#     # 設定 output 資料夾的路徑
+#     output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'output'))
+#     # 讀取最新的兩張圖片檔案名稱
+#     latest_images = get_latest_images(output_dir)
+#     # print(latest_images[0])
+#     # 拼接字串
+#     image_path0 = "/Cloud_Image/ComfyUI/output/" + latest_images[0]
+#     image_path1 = "/Cloud_Image/ComfyUI/output/" + latest_images[1]
 
-    # 當 latest_images 不是預期的情況時，指定預設圖片
-    if len(latest_images) < 2:
-        print("Latest images not found or not enough images. Using default images.")
-        image_path0 = "/Cloud_Image/ComfyUI/output/ComfyUI_00003_.png"  # 預設圖片 1
-        image_path1 = "/Cloud_Image/ComfyUI/output/ComfyUI_00004_.png"  # 預設圖片 2
-    else:
-        image_path0 = os.path.join(output_dir, latest_images[0])
-        image_path1 = os.path.join(output_dir, latest_images[1])
-    # 檢查指定的圖片是否存在
-    if not os.path.exists(image_path0) or not os.path.exists(image_path1):
-        raise FileNotFoundError(f"Image path(s) not found: {image_path0}, {image_path1}")
+#     # 當 latest_images 不是預期的情況時，指定預設圖片
+#     if len(latest_images) < 2:
+#         print("Latest images not found or not enough images. Using default images.")
+#         image_path0 = "/Cloud_Image/ComfyUI/output/ComfyUI_00003_.png"  # 預設圖片 1
+#         image_path1 = "/Cloud_Image/ComfyUI/output/ComfyUI_00004_.png"  # 預設圖片 2
+#     else:
+#         image_path0 = os.path.join(output_dir, latest_images[0])
+#         image_path1 = os.path.join(output_dir, latest_images[1])
+#     # 檢查指定的圖片是否存在
+#     if not os.path.exists(image_path0) or not os.path.exists(image_path1):
+#         raise FileNotFoundError(f"Image path(s) not found: {image_path0}, {image_path1}")
 
-    # 確保圖片有效，並傳遞給 interpolator
-    if validate_image(image_path0) and validate_image(image_path1):
-        results = interpolator.generate(
-            imgs=(image_path0, image_path1),
-            exp=4
-        )
-    else:
-        raise ValueError("Invalid images provided to interpolator.generate")
+#     # 確保圖片有效，並傳遞給 interpolator
+#     if validate_image(image_path0) and validate_image(image_path1):
+#         results = interpolator.generate(
+#             imgs=(image_path0, image_path1),
+#             exp=4
+#         )
+#     else:
+#         raise ValueError("Invalid images provided to interpolator.generate")
 
-    # 如果有圖片，顯示或處理
-    if latest_images:
-        # image to video
-        # TODO: 這邊要改成直接回傳照片binary data
-        results = interpolator.generate(
-            imgs=(image_path0, image_path1),
-            exp=4,
-            # output_dir="interpolate_out"
-            # output_dir=os.path.join(comfyui_dir, "interpolate_out") 
-        )
+#     # 如果有圖片，顯示或處理
+#     if latest_images:
+#         # image to video
+#         # TODO: 這邊要改成直接回傳照片binary data
+#         results = interpolator.generate(
+#             imgs=(image_path0, image_path1),
+#             exp=4,
+#             # output_dir="interpolate_out"
+#             # output_dir=os.path.join(comfyui_dir, "interpolate_out") 
+#         )
 
-        print("process_comfyUI完成")    
-        return {"result": results}
-#############################################
+#         print("process_comfyUI完成")    
+#         return {"result": results}
+# #############################################
 
-def main():
-    # Start FastAPI server in a separate thread
-    fastapi_thread = threading.Thread(target=start_fastapi, daemon=True)
-    fastapi_thread.start()
-    print("FastAPI server started on port 8000")
-
-
+def main(): 
 
     global latest_full_frame
     ta = TextAnimate()
 
-    # with ThreadPoolExecutor(max_workers=4) as general_executor:
-    #     while True:
-    #         future_radicals = general_executor.submit(process_radical)
-    #         future_comfyui = general_executor.submit(process_comfyui)
+    with ThreadPoolExecutor(max_workers=4) as general_executor:
+        while True:
+            future_radicals = general_executor.submit(process_radical)
+            future_comfyui = general_executor.submit(process_comfyui)
 
-    #         radicals = future_radicals.result()
-    #         bgs = future_comfyui.result()
+            radicals = future_radicals.result()
+            bgs = future_comfyui.result()
 
-    #         EmotionDis = get_emotion()
+            EmotionDis = get_emotion()
 
-    #         for i in range(9):
-    #             temp_frame = draw_temperature(bgs[i])
-    #             print(i,"temp_frame finish")
+            for i in range(9):
+                temp_frame = draw_temperature(bgs[i])
+                print(i,"temp_frame finish")
 
-    #             print(EmotionDis)
+                print(EmotionDis)
 
-    #             print(temp_frame.shape)
+                print(temp_frame.shape)
                 
-    #             # Convert frame to BGRA
-    #             if len(temp_frame.shape) == 2:
-    #                 # 灰階
-    #                 temp_frame = np.repeat(temp_frame[..., None], 4, axis=-1)
-    #                 temp_frame[..., 3] = 255
-    #             elif len(temp_frame.shape) == 3:
-    #                 if len(temp_frame[0][0]) == 3:
-    #                     # BGR to BGRA
-    #                     temp_frame = np.concatenate(
-    #                         (temp_frame, np.full((*temp_frame.shape[:2], 1), 255, dtype=np.uint8)),
-    #                         axis=-1,
-    #                     )
+                # Convert frame to BGRA
+                if len(temp_frame.shape) == 2:
+                    # 灰階
+                    temp_frame = np.repeat(temp_frame[..., None], 4, axis=-1)
+                    temp_frame[..., 3] = 255
+                elif len(temp_frame.shape) == 3:
+                    if len(temp_frame[0][0]) == 3:
+                        # BGR to BGRA
+                        temp_frame = np.concatenate(
+                            (temp_frame, np.full((*temp_frame.shape[:2], 1), 255, dtype=np.uint8)),
+                            axis=-1,
+                        )
 
-    #             # 畫文字
-    #             img = ta.draw(temp_frame, EmotionDistribution(**EmotionDis), radicals)
-    #             img = cv2.cvtColor(img.result(), cv2.COLOR_BGRA2BGR)
+                # 畫文字
+                img = ta.draw(temp_frame, EmotionDistribution(**EmotionDis), radicals)
+                img = cv2.cvtColor(img.result(), cv2.COLOR_BGRA2BGR)
 
-    #             # 根據當前時間生成檔名
-    #             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    #             filename = f"{timestamp}.png"
+                # 根據當前時間生成檔名
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"{timestamp}.png"
 
-    #             # 完整的儲存路徑
-    #             output_path = os.path.join(output_dir, filename)
+                # 完整的儲存路徑
+                output_path = os.path.join(output_dir, filename)
 
-    #             # 使用 OpenCV 將陣列儲存成圖片
-    #             cv2.imwrite(output_path, img)
+                # 使用 OpenCV 將陣列儲存成圖片
+                cv2.imwrite(output_path, img)
 
 
 

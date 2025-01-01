@@ -1,56 +1,120 @@
-import cv2
 import numpy as np
 import requests
 import time
+import cv2
+from PIL import Image, ImageDraw, ImageFont
 
-# Function to draw the fixed parts of the thermometer (outline and labels)
-def draw_fixed_parts(img):
-    # Draw the outline of the thermometer
-    outline = np.array([[250, 50], [275, 50], [275, 460], [225, 460], [225, 50], [250, 50]], np.int32)
-    cv2.polylines(img, [outline], isClosed=True, color=(0, 0, 0), thickness=5)
+# # Function to draw the fixed parts of the thermometer (outline and labels)
+# def draw_fixed_parts(img):
+#     # Draw the outline of the thermometer
+#     outline = np.array([[250, 50], [275, 50], [275, 460], [225, 460], [225, 50], [250, 50]], np.int32)
+#     cv2.polylines(img, [outline], isClosed=True, color=(0, 0, 0), thickness=5)
 
-    # Add temperature labels
-    cv2.putText(img, '0', (180, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
-    cv2.putText(img, '40', (180, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
+#     # Add temperature labels
+#     cv2.putText(img, '0', (180, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
+#     cv2.putText(img, '40', (180, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
 
-    # Draw the bulb
-    cv2.circle(img, (250, 460), 50, (0, 0, 0), 5)
+#     # Draw the bulb
+#     cv2.circle(img, (250, 460), 50, (0, 0, 0), 5)
 
-# Function to update the filled bulb color
-def fill_bulb(img, color):
-    cv2.circle(img, (250, 460), 50, color, -1)
+# # Function to update the filled bulb color
+# def fill_bulb(img, color):
+#     cv2.circle(img, (250, 460), 50, color, -1)
 
-# Function to update the temperature bar and color
-def update_temperature_bar(img, temp, color):
-    top = int(460 - 410 * temp / 40)
-    bar = np.array([[250, 460], [270, 460], [270, top], [230, top], [230, 460], [250, 460]], np.int32)
-    cv2.fillPoly(img, [bar], color)
-    cv2.putText(img, f'{temp:.1f}', (330, top + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
+# # Function to update the temperature bar and color
+# def update_temperature_bar(img, temp, color):
+#     top = int(460 - 410 * temp / 40)
+#     bar = np.array([[250, 460], [270, 460], [270, top], [230, top], [230, 460], [250, 460]], np.int32)
+#     cv2.fillPoly(img, [bar], color)
+#     cv2.putText(img, f'{temp:.1f}', (330, top + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
 
-# Function to create the thermometer image
-def draw_thermometer(temperature):
-    img = np.ones((600, 600, 3), dtype=np.uint8) * 255
+# # Function to create the thermometer image
+# def draw_thermometer(temperature):
+#     img = np.ones((600, 600, 3), dtype=np.uint8) * 255
 
-    draw_fixed_parts(img)
+#     draw_fixed_parts(img)
 
-    # color_map = [(1, (255, 191, 0)), (11, (173, 255, 47)), (21, (255, 165, 0)), (31, (255, 0, 0)), (40, (255, 0, 0))]
-    color_map = [(11, (255, 255, 0)), (21, (144, 238, 144)), (31, (0, 127, 255)), (40, (0, 0, 255))]
-    color = (0, 0, 255)
-    for start_temp, start_color in color_map:
-        if temperature <= start_temp:
-            color = start_color
-            break
+#     # color_map = [(1, (255, 191, 0)), (11, (173, 255, 47)), (21, (255, 165, 0)), (31, (255, 0, 0)), (40, (255, 0, 0))]
+#     color_map = [(11, (255, 255, 0)), (21, (144, 238, 144)), (31, (0, 127, 255)), (40, (0, 0, 255))]
+#     color = (0, 0, 255)
+#     for start_temp, start_color in color_map:
+#         if temperature <= start_temp:
+#             color = start_color
+#             break
 
-    update_temperature_bar(img, temperature, color)
-    fill_bulb(img, color)
+#     update_temperature_bar(img, temperature, color)
+#     fill_bulb(img, color)
 
-    return img
+#     return img
 
 # Function to overlay images with transparency
+# def overlay_images(background, overlay, x_offset, y_offset, alpha=0.5):
+#     y1, y2 = y_offset, y_offset + overlay.shape[0]
+#     x1, x2 = x_offset, x_offset + overlay.shape[1]
+
+#     # Ensure the overlay fits within the background
+#     if y2 > background.shape[0]:
+#         y2 = background.shape[0]
+#         overlay = overlay[:y2 - y1, :]
+#     if x2 > background.shape[1]:
+#         x2 = background.shape[1]
+#         overlay = overlay[:, :x2 - x1]
+
+#     # Blend images
+#     background[y1:y2, x1:x2] = cv2.addWeighted(background[y1:y2, x1:x2], 1 - alpha, overlay, alpha, 0)
+#     return background
+
+# def draw_only_number(temperature):
+#     # Create a transparent background (4 channels - BGRA)
+#     img = np.ones((100, 200, 3), dtype=np.uint8) * 255
+    
+#     # Add temperature text
+#     temp_text = f'{temperature:.1f}°C'
+#     font = cv2.FONT_HERSHEY_SIMPLEX
+#     font_scale = 1
+#     thickness = 2
+    
+#     # Get text size
+#     (text_width, text_height), baseline = cv2.getTextSize(temp_text, font, font_scale, thickness)
+    
+#     # Calculate text position to center it
+#     text_x = int((img.shape[1] - text_width) / 2)
+#     text_y = int((img.shape[0] + text_height) / 2)
+    
+#     # Draw white text
+#     cv2.putText(img, temp_text, (text_x, text_y), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
+    
+#     return img
+def draw_only_number(temperature):
+    # Create PIL image with transparent background using RGBA
+    img = Image.new('RGBA', (200, 100), color=(0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    
+    # Load font
+    font = ImageFont.truetype("Basic-Regular.ttf", 72)
+    
+    # Add temperature text
+    temp_text = f'{temperature:.1f}°C'
+    
+    # Get text size
+    text_bbox = draw.textbbox((0, 0), temp_text, font=font)
+    text_width = text_bbox[2] - text_bbox[0]
+    text_height = text_bbox[3] - text_bbox[1]
+    
+    # Calculate text position to center it
+    text_x = int((200 - text_width) / 2)
+    text_y = int((100 - text_height) / 2)
+    
+    # Draw white text
+    draw.text((text_x, text_y), temp_text, font=font, fill='white')
+    
+    # Convert to OpenCV format
+    opencv_img = np.array(img)
+    return opencv_img
 def overlay_images(background, overlay, x_offset, y_offset, alpha=0.5):
     y1, y2 = y_offset, y_offset + overlay.shape[0]
     x1, x2 = x_offset, x_offset + overlay.shape[1]
-
+    
     # Ensure the overlay fits within the background
     if y2 > background.shape[0]:
         y2 = background.shape[0]
@@ -58,7 +122,14 @@ def overlay_images(background, overlay, x_offset, y_offset, alpha=0.5):
     if x2 > background.shape[1]:
         x2 = background.shape[1]
         overlay = overlay[:, :x2 - x1]
-
-    # Blend images
-    background[y1:y2, x1:x2] = cv2.addWeighted(background[y1:y2, x1:x2], 1 - alpha, overlay, alpha, 0)
+    
+    # Get alpha channel from overlay
+    alpha_channel = overlay[:, :, 3] / 255.0
+    alpha_channel = alpha_channel * alpha  # Apply additional transparency
+    
+    # For each color channel
+    for c in range(3):  # BGR channels
+        background[y1:y2, x1:x2, c] = (background[y1:y2, x1:x2, c] * (1 - alpha_channel) + 
+                                      overlay[:, :, c] * alpha_channel)
+    
     return background

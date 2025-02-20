@@ -24,7 +24,7 @@ sys.path.append(cloud_image_dir)  # 添加 Cloud_Image 到 sys.path
 # 使用絕對匯入
 from ECCV2022_RIFE.InterpolatorInterface import InterpolatorInterface
 
-from generate_prompt2 import generate_prompt, get_emotion, get_temperature
+from ComfyUI.test_prompt.English_prompt_only import generate_prompt, get_emotion, get_temperature
 from temperature import draw_thermometer, overlay_images
 
 # 設定儲存路徑

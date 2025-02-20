@@ -2,30 +2,13 @@
 import requests
 import time
 import random
+import asyncio
+import websockets
 
 emotions: dict = {}
 temperature_r = 0
-count_t = 0
-
-def fetch_data():
-    global count_t
-    # Function to continuously fetch temperature data
-    while True:
-        count_t = count_t+1
-        emotions_vec = tuple(random. choices (range (1, 6), k=7))
-        if count_t < 20:
-            temperature = random. randint (0,10)
-        elif count_t < 40:
-            temperature = random. randint (10,21)
-        elif count_t < 60:
-            temperature = random. randint (20,31)
-        elif count_t < 80:
-            temperature = random. randint (30,41)
-        else:
-            temperature = 0
-            count_t = 0
-        yield temperature, emotions_vec
-            
+count = 0
+           
 
 def get_dominant_emotion(emotions_vec):
     # 找到最大值的索引
@@ -132,55 +115,26 @@ def choose_date(temperature):
 
     return season_num, timing_num
 
-def generate_prompt(temp_vector=None):
-    """
-    temp_vector = {
-        "timestamp"
-        "num_people",
-        "emotions_list",
-        "num_words",
-        "temperature",
-    }
-    """
+def generate_prompt():
 
-    if temp_vector is None:
-        print("No input data")
-        global emotions, temperature_r
-        for temperature, emotions_vec in fetch_data():
-            emotions = tran_dict(emotions_vec)
-            temperature_r = temperature
-            # print(f"Temperature: {temperature}, Emotions: {emotions_vec}")
-            temperature_str = str(temperature) #str
-            dominant_emotion = get_dominant_emotion(emotions_vec)
-            cloud_types, color = choose_cloud_and_color(dominant_emotion) # str
-            season_num, timing_num = choose_date(temperature) 
-            season = season_list[season_num] #str
-            timing = timing_list[timing_num] #str
+    global emotions, temperature_r
+    for temperature, emotions_vec in fetch_data():
+        emotions = tran_dict(emotions_vec)
+        temperature_r = temperature
+        # print(f"Temperature: {temperature}, Emotions: {emotions_vec}")
+        temperature_str = str(temperature) #str
+        dominant_emotion = get_dominant_emotion(emotions_vec)
+        cloud_types, color = choose_cloud_and_color(dominant_emotion) # str
+        season_num, timing_num = choose_date(temperature) 
+        season = season_list[season_num] #str
+        timing = timing_list[timing_num] #str
 
-            prompt = "weather forecast, no people, only show the sky, fantasy style, " + temperature_str + " degrees Celsius, " + cloud_types + color + season + timing 
+        prompt = "weather forecast, no people, only show the sky, " + temperature_str + " degrees Celsius, " + cloud_types + color + season + timing 
 
-            # print(prompt)
+        # print(prompt)
 
-            # weather forecast, no people, only show the sky, fantasy style, 33 degrees Celsius, cirrus, Bright green, spring noon, 
-            return prompt
-        else:
-            print("Received input data (temp_vector)")
-            temperature = temp_vector["temperature"]
-            emotions_vec = temp_vector["emotions_list"]
-
-            emotions = tran_dict(emotions_vec)
-            temperature_r = temperature
-            # print(f"Temperature: {temperature}, Emotions: {emotions_vec}")
-            temperature_str = str(temperature) #str
-            dominant_emotion = get_dominant_emotion(emotions_vec)
-            cloud_types, color = choose_cloud_and_color(dominant_emotion) # str
-            season_num, timing_num = choose_date(temperature) 
-            season = season_list[season_num] #str
-            timing = timing_list[timing_num] #str
-
-            prompt = "weather forecast, no people, only show the sky, fantasy style, " + temperature_str + " degrees Celsius, " + cloud_types + color + season + timing 
-
-            return prompt
+        # weather forecast, no people, only show the sky, fantasy style, 33 degrees Celsius, cirrus, Bright green, spring noon, 
+        return prompt
 
 def tran_dict(emotions_vec):
     b = {}
@@ -211,6 +165,54 @@ def get_emotion():
 
 def get_temperature():
     return temperature_r
+
+def fetch_data():
+    temperature = random_temp()
+    emotions_vec = random_emotions()
+    yield temperature, emotions_vec
+
+def random_emotions():
+    global count
+    while count >= -1:
+        count = count + 1
+        if count < 15:
+            
+            dominant_emotions = [random.randint(0, 5) for _ in range(7)]
+        elif count < 30:
+            
+            dominant_emotions = [random.randint(0, 5) for _ in range(7)]
+        elif count < 45:
+            
+            dominant_emotions = [random.randint(0, 5) for _ in range(7)]
+        elif count < 60:
+           
+            dominant_emotions = [random.randint(0, 5) for _ in range(7)]
+        else:
+            count = 1
+           
+            dominant_emotions = [random.randint(0, 5) for _ in range(7)]
+
+        return dominant_emotions
+
+def random_temp():
+    global count
+    while count >= -1:
+        count = count + 1
+        if count < 15:
+            temperature = random.randint(0, 10)
+
+        elif count < 30:
+            temperature = random.randint(10, 20)
+        elif count < 45:
+            temperature = random.randint(20, 30)
+        elif count < 60:
+            temperature = random.randint(30, 40)
+        else:
+            count = 1
+            temperature = random.randint(30, 40)
+        
+        return temperature
+
 
 if __name__ == "__main__":
     print(generate_prompt())

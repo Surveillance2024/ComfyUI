@@ -108,9 +108,12 @@ def validate_image(path):
         print(f"Image validation failed for {path}: {e}")
         return False
 
+# 假設這是你的處理邏輯
+last_image_path = None  # 用來記錄上一輪處理的圖片路徑
 
 # 假設這是處理 ComfyUI 的函數
 def process_comfyui():
+    global last_image_path  # 使用全域變數來記錄圖片路徑
     with open("workflow_api.json") as workflow_api:
         prompt = json.load(workflow_api)
     print("workflow_api open")
@@ -130,6 +133,8 @@ def process_comfyui():
     queue_prompt(prompt)['prompt_id']  # 將提示加入隊列（假設這個函數已經實現）
     print(prompt_text)
 
+    
+
     # 設定 output 資料夾的路徑
     output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'output'))
     # 讀取最新的兩張圖片檔案名稱
@@ -145,34 +150,43 @@ def process_comfyui():
         image_path0 = "/Cloud_Image/ComfyUI/output/ComfyUI_00003_.png"  # 預設圖片 1
         image_path1 = "/Cloud_Image/ComfyUI/output/ComfyUI_00004_.png"  # 預設圖片 2
     else:
-        image_path0 = os.path.join(output_dir, latest_images[0])
-        image_path1 = os.path.join(output_dir, latest_images[1])
+        # image_path0 = os.path.join(output_dir, latest_images[0])
+        # image_path1 = os.path.join(output_dir, latest_images[1])
+        # 當有記錄的上一輪圖片路徑時，使用它
+        if last_image_path:
+            image_path0 = last_image_path  # 使用記住的上一輪圖片
+            image_path1 = os.path.join(output_dir, latest_images[0])  # 使用當前最新的圖片
+        else:
+            # 如果沒有記錄過上一張圖片，則取最新的兩張圖片
+            image_path0 = os.path.join(output_dir, latest_images[1])  # 上一張圖片
+            image_path1 = os.path.join(output_dir, latest_images[0])  # 當前圖片
     # 檢查指定的圖片是否存在
     if not os.path.exists(image_path0) or not os.path.exists(image_path1):
         raise FileNotFoundError(f"Image path(s) not found: {image_path0}, {image_path1}")
+    print(image_path0, image_path1)
 
     # 確保圖片有效，並傳遞給 interpolator
     if validate_image(image_path0) and validate_image(image_path1):
         results = interpolator.generate(
             imgs=(image_path0, image_path1),
-            exp=4
+            exp=5
         )
     else:
         raise ValueError("Invalid images provided to interpolator.generate")
 
-    # 如果有圖片，顯示或處理
-    if latest_images:
-        # image to video
-        results = interpolator.generate(
-            imgs=(image_path0, image_path1),
-            exp=5,
-            # output_dir="interpolate_out"
-            # output_dir=os.path.join(comfyui_dir, "interpolate_out") 
-        )
-
-        return results
+    # # 如果有圖片，顯示或處理
+    # if latest_images:
+    #     # image to video
+    #     results = interpolator.generate(
+    #         imgs=(image_path0, image_path1),
+    #         exp=5,
+    #         # output_dir="interpolate_out"
+    #         # output_dir=os.path.join(comfyui_dir, "interpolate_out") 
+    #     )
 
     print("process_comfyUI完成")
+    return results
+
 
 def process_radical():
     prompt_generator = PromptGenerator()
@@ -246,9 +260,12 @@ async def get_data(data: dict):
         emotions_list = data.get("emotions_vec", [])
         print(f"Received Temperature: {temperature}")
         print(f"Received Emotions List: {emotions_list}")
-
-        # 處理圖片並獲取9張 Base64 編碼的圖片
+        if(all(x == 0 for x in emotions_list)):
+            emotions_list = [0,0,0,0,0,0,1]
+            temperature = 0
+            # 處理圖片並獲取9張 Base64 編碼的圖片
         images_base64_list = main()
+        
 
         # 將圖片列表以 JSON 格式回傳
         return JSONResponse(content={"images": images_base64_list})
@@ -257,13 +274,14 @@ async def get_data(data: dict):
 
 #############################################
 
-
+output_images = []  # 用來存放產生的圖片
 def main():
-    global latest_full_frame, emotions_list
+    global latest_full_frame, emotions_list, output_images
     ta = TextAnimate()
-    output_images = []  # 用來存放產生的圖片
+    
 
     try:
+        output_images = []  # 用來存放產生的圖片
         # 使用 ThreadPoolExecutor 處理圖片生成
         with ThreadPoolExecutor(max_workers=4) as general_executor:
             future_radicals = general_executor.submit(process_radical)
@@ -291,19 +309,25 @@ def main():
                 print(img.shape if hasattr(img, "shape") else "Invalid image format")
 
 
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                filename = f"{timestamp}.png"
-                output_path = os.path.join(output_dir, filename)
+                # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                # filename = f"{timestamp}.png"
+                # output_path = os.path.join(output_dir, filename)
 
                 # cv2.imwrite(output_path, img)
-                success = cv2.imwrite(output_path, img)
-                if not success:
-                    raise IOError(f"Failed to write image to {output_path}")
+                # success = cv2.imwrite(output_path, img)
+                # if not success:
+                #     raise IOError(f"Failed to write image to {output_path}")
 
-                with open(output_path, "rb") as image_file:
-                    image_data = image_file.read()
-                    image_base64 = base64.b64encode(image_data).decode("utf-8")
-                    output_images.append(image_base64)
+                # with open(output_path, "rb") as image_file:
+                #     image_data = image_file.read()
+                #     image_base64 = base64.b64encode(image_data).decode("utf-8")
+                #     output_images.append(image_base64)
+                # 將圖片轉換為 Base64 字串
+                _, buffer = cv2.imencode('.png', img)
+                image_base64 = base64.b64encode(buffer).decode("utf-8")
+
+                # 將 Base64 字串回傳或使用
+                output_images.append(image_base64)
 
         return output_images
 

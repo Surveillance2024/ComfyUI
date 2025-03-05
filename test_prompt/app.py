@@ -40,6 +40,9 @@ output_dir = '../final_image'
 temperature = 0
 emotions_list : dict = {}
 
+# workflow_api會找不到路徑，所以要生成指向workflow_api的絕對路徑
+os.path.join(os.path.dirname(os.path.abspath(__file__)). "workflow_api.json")
+
 server_address = "127.0.0.1:8188"
 client_id = str(uuid.uuid4())
 

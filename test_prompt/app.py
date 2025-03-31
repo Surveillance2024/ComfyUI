@@ -41,7 +41,7 @@ temperature = 0
 emotions_list : dict = {}
 
 # workflow_api會找不到路徑，所以要生成指向workflow_api的絕對路徑
-os.path.join(os.path.dirname(os.path.abspath(__file__)). "workflow_api.json")
+os.path.join(os.path.dirname(os.path.abspath(__file__)), "workflow_api.json")
 
 server_address = "127.0.0.1:8188"
 client_id = str(uuid.uuid4())
@@ -282,7 +282,6 @@ def main():
     global latest_full_frame, emotions_list, output_images
     ta = TextAnimate()
     
-
     try:
         output_images = []  # 用來存放產生的圖片
         # 使用 ThreadPoolExecutor 處理圖片生成
@@ -295,7 +294,7 @@ def main():
 
             EmotionDis = emotions_mapping(emotions_list)
 
-            for i in range(17):  # 假設你需要處理9張圖片
+            for i in range(17):  # 現在有17張圖片
                 temp_frame = draw_temperature(bgs[i])
                 if len(temp_frame.shape) == 2:
                     temp_frame = np.repeat(temp_frame[..., None], 4, axis=-1)

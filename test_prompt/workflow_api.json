@@ -1,7 +1,7 @@
 {
   "3": {
     "inputs": {
-      "seed": 787475629082271,
+      "seed": 97829225789131,
       "steps": 20,
       "cfg": 8,
       "sampler_name": "euler",
@@ -31,7 +31,7 @@
   },
   "4": {
     "inputs": {
-      "ckpt_name": "absolutereality_v181.safetensors"
+      "ckpt_name": "v1-5-pruned-emaonly.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
@@ -40,8 +40,8 @@
   },
   "5": {
     "inputs": {
-      "width": 1920,
-      "height": 1080,
+      "width": 512,
+      "height": 512,
       "batch_size": 1
     },
     "class_type": "EmptyLatentImage",
@@ -51,7 +51,7 @@
   },
   "6": {
     "inputs": {
-      "text" : "", 
+      "text": "Pprompt",
       "clip": [
         "4",
         1
@@ -64,7 +64,7 @@
   },
   "7": {
     "inputs": {
-      "text": "text, watermark, people",
+      "text": "Nprompt",
       "clip": [
         "4",
         1

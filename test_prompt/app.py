@@ -40,9 +40,6 @@ output_dir = '../final_image'
 temperature = 0
 emotions_list : dict = {}
 
-# workflow_api會找不到路徑，所以要生成指向workflow_api的絕對路徑
-os.path.join(os.path.dirname(os.path.abspath(__file__)), "workflow_api.json")
-
 server_address = "127.0.0.1:8188"
 client_id = str(uuid.uuid4())
 
@@ -117,7 +114,7 @@ last_image_path = None  # 用來記錄上一輪處理的圖片路徑
 # 假設這是處理 ComfyUI 的函數
 def process_comfyui():
     global last_image_path  # 使用全域變數來記錄圖片路徑
-    with open("workflow_api.json") as workflow_api:
+    with open(os.path.join(os.path.dirname(__file__), "workflow_api.json")) as workflow_api:
         prompt = json.load(workflow_api)
     print("workflow_api open")
 

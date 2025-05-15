@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import requests
 import time
@@ -91,7 +92,7 @@ def draw_only_number(temperature):
     draw = ImageDraw.Draw(img)
     
     # Load font
-    font = ImageFont.truetype("Basic-Regular.ttf", 72)
+    font = ImageFont.truetype(os.path.join(os.path.dirname(__file__), "Basic-Regular.ttf"), 72)
     
     # Add temperature text
     temp_text = f'{temperature:.1f}°C'

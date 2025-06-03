@@ -71,14 +71,14 @@ class PromptGenerator:
             prompt = (
                 f"生成一個魔法風格和神秘風格的場景, {temperature} 攝氏度, "
                 f"情緒包含 {chinese_emotion_descriptions}, 背景為一個想像世界, "
-                f"沒有人物, {chinese_color1} {chinese_color2} {chinese_color3} {chinese_season}, {chinese_timing}"
+                f"{chinese_color1} {chinese_color2} {chinese_color3} {chinese_season}, {chinese_timing}"
             )
             print(prompt)
         else:
             prompt = (
                 f"generate a magical style and mysterious style, {temperature} degrees Celsius, "
                 f"scene of mood contains {emotion_descriptions}, in the background of an imagination world, "
-                f"no people,combing {color1} and {color2} and {color3} colors, {season}, {timing}"
+                f"combing {color1} and {color2} and {color3} colors, {season}, {timing}"
             )
         
         return prompt

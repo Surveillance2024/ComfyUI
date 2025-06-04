@@ -1,21 +1,3 @@
-# 說明
-除了test_prompt資料夾之外，其他皆是原來ComfyUI的程式碼
-1. `ComfyUI+RIFE.py`：生圖＋圖轉影片的程式碼
-2. English_prompt_only.py：只會產生英文prompt的程式碼
-3. app.py：主要串接、運行的部分。最終成果會產生包含圖片＋文字動畫＋圖轉影片
-4. prompt_class.py：產生prompt，被app.py引入。
-5. prompt_class_cloud：天氣雲圖prompt
-6. temperature.py：畫溫度計（放在圖片的右上角）
-7. workflow_api.json：使用後端控制ComfyUI的json資訊
-
-# 注意
-1. 需要放入模型檔，ComfyUI才可以動。模型檔位置：`ComfyUI/models/checkpoints`
-2. 運行ComfyUI：
-```
-python main.py --port 8188
-```
-3. ComfyUI產生的圖在output資料夾中
-
 <div align="center">
 
 # ComfyUI

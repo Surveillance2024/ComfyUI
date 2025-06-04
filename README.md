@@ -101,6 +101,8 @@ Workflow examples can be found on the [Examples page](https://comfyanonymous.git
 | `Q`                                 | Toggle visibility of the queue                                                                                     |
 | `H`                                  | Toggle visibility of history                                                                                       |
 | `R`                                  | Refresh graph                                                                                                      |
+| `F`                                  | Show/Hide menu                                                                                                      |
+| `.`                                  | Fit view to selection (Whole graph when nothing is selected)                                                        |
 | Double-Click LMB                   | Open node quick search palette                                                                                     |
 | `Shift` + Drag                       | Move multiple wires at once                                                                                        |
 | `Ctrl` + `Alt` + LMB                   | Disconnect all wires from clicked slot                                                                             |
@@ -145,7 +147,7 @@ AMD users can install rocm and pytorch with pip if you don't have it already ins
 
 This is the command to install the nightly with ROCm 6.2 which might have some performance improvements:
 
-```pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2```
+```pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.2.4```
 
 ### NVIDIA
 
@@ -218,6 +220,8 @@ For AMD 7600 and maybe other RDNA3 cards: ```HSA_OVERRIDE_GFX_VERSION=11.0.0 pyt
 You can enable experimental memory efficient attention on pytorch 2.5 in ComfyUI on RDNA3 and potentially other AMD GPUs using this command:
 
 ```TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1 python main.py --use-pytorch-cross-attention```
+
+You can also try setting this env variable `PYTORCH_TUNABLEOP_ENABLED=1` which might speed things up at the cost of a very slow initial run.
 
 # Notes
 

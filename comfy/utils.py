@@ -26,6 +26,8 @@ import numpy as np
 from PIL import Image
 import logging
 import itertools
+from torch.nn.functional import interpolate
+from einops import rearrange
 
 def load_torch_file(ckpt, safe_load=False, device=None):
     if device is None:
@@ -46,7 +48,13 @@ def load_torch_file(ckpt, safe_load=False, device=None):
         if "state_dict" in pl_sd:
             sd = pl_sd["state_dict"]
         else:
-            sd = pl_sd
+            if len(pl_sd) == 1:
+                key = list(pl_sd.keys())[0]
+                sd = pl_sd[key]
+                if not isinstance(sd, dict):
+                    sd = pl_sd
+            else:
+                sd = pl_sd
     return sd
 
 def save_torch_file(sd, ckpt, metadata=None):
@@ -743,7 +751,7 @@ def get_tiled_scale_steps(width, height, tile_x, tile_y, overlap):
     return rows * cols
 
 @torch.inference_mode()
-def tiled_scale_multidim(samples, function, tile=(64, 64), overlap = 8, upscale_amount = 4, out_channels = 3, output_device="cpu", pbar = None):
+def tiled_scale_multidim(samples, function, tile=(64, 64), overlap=8, upscale_amount=4, out_channels=3, output_device="cpu", downscale=False, pbar=None):
     dims = len(tile)
 
     if not (isinstance(upscale_amount, (tuple, list))):
@@ -759,10 +767,22 @@ def tiled_scale_multidim(samples, function, tile=(64, 64), overlap = 8, upscale_
         else:
             return up * val
 
+    def get_downscale(dim, val):
+        up = upscale_amount[dim]
+        if callable(up):
+            return up(val)
+        else:
+            return val / up
+
+    if downscale:
+        get_scale = get_downscale
+    else:
+        get_scale = get_upscale
+
     def mult_list_upscale(a):
         out = []
         for i in range(len(a)):
-            out.append(round(get_upscale(i, a[i])))
+            out.append(round(get_scale(i, a[i])))
         return out
 
     output = torch.empty([samples.shape[0], out_channels] + mult_list_upscale(samples.shape[2:]), device=output_device)
@@ -787,16 +807,18 @@ def tiled_scale_multidim(samples, function, tile=(64, 64), overlap = 8, upscale_
             upscaled = []
 
             for d in range(dims):
-                pos = max(0, min(s.shape[d + 2] - (overlap[d] + 1), it[d]))
+                pos = max(0, min(s.shape[d + 2] - overlap[d], it[d]))
                 l = min(tile[d], s.shape[d + 2] - pos)
                 s_in = s_in.narrow(d + 2, pos, l)
-                upscaled.append(round(get_upscale(d, pos)))
+                upscaled.append(round(get_scale(d, pos)))
 
             ps = function(s_in).to(output_device)
             mask = torch.ones_like(ps)
 
             for d in range(2, dims + 2):
-                feather = round(get_upscale(d - 2, overlap[d - 2]))
+                feather = round(get_scale(d - 2, overlap[d - 2]))
+                if feather >= mask.shape[d]:
+                    continue
                 for t in range(feather):
                     a = (t + 1) / feather
                     mask.narrow(d, t, 1).mul_(a)
@@ -818,7 +840,7 @@ def tiled_scale_multidim(samples, function, tile=(64, 64), overlap = 8, upscale_
     return output
 
 def tiled_scale(samples, function, tile_x=64, tile_y=64, overlap = 8, upscale_amount = 4, out_channels = 3, output_device="cpu", pbar = None):
-    return tiled_scale_multidim(samples, function, (tile_y, tile_x), overlap, upscale_amount, out_channels, output_device, pbar)
+    return tiled_scale_multidim(samples, function, (tile_y, tile_x), overlap=overlap, upscale_amount=upscale_amount, out_channels=out_channels, output_device=output_device, pbar=pbar)
 
 PROGRESS_BAR_ENABLED = True
 def set_progress_bar_enabled(enabled):
@@ -867,5 +889,46 @@ def reshape_mask(input_mask, output_shape):
     mask = torch.nn.functional.interpolate(input_mask, size=output_shape[2:], mode=scale_mode)
     if mask.shape[1] < output_shape[1]:
         mask = mask.repeat((1, output_shape[1]) + (1,) * dims)[:,:output_shape[1]]
-    mask = comfy.utils.repeat_to_batch_size(mask, output_shape[0])
+    mask = repeat_to_batch_size(mask, output_shape[0])
     return mask
+
+def upscale_dit_mask(mask: torch.Tensor, img_size_in, img_size_out):
+        hi, wi = img_size_in
+        ho, wo = img_size_out
+        # if it's already the correct size, no need to do anything
+        if (hi, wi) == (ho, wo):
+            return mask
+        if mask.ndim == 2:
+            mask = mask.unsqueeze(0)
+        if mask.ndim != 3:
+            raise ValueError(f"Got a mask of shape {list(mask.shape)}, expected [b, q, k] or [q, k]")
+        txt_tokens = mask.shape[1] - (hi * wi)
+        # quadrants of the mask
+        txt_to_txt = mask[:, :txt_tokens, :txt_tokens]
+        txt_to_img = mask[:, :txt_tokens, txt_tokens:]
+        img_to_img = mask[:, txt_tokens:, txt_tokens:]
+        img_to_txt = mask[:, txt_tokens:, :txt_tokens]
+
+        # convert to 1d x 2d, interpolate, then back to 1d x 1d
+        txt_to_img = rearrange  (txt_to_img, "b t (h w) -> b t h w", h=hi, w=wi)
+        txt_to_img = interpolate(txt_to_img, size=img_size_out, mode="bilinear")
+        txt_to_img = rearrange  (txt_to_img, "b t h w -> b t (h w)")
+        # this one is hard because we have to do it twice
+        # convert to 1d x 2d, interpolate, then to 2d x 1d, interpolate, then 1d x 1d
+        img_to_img = rearrange  (img_to_img, "b hw (h w) -> b hw h w", h=hi, w=wi)
+        img_to_img = interpolate(img_to_img, size=img_size_out, mode="bilinear")
+        img_to_img = rearrange  (img_to_img, "b (hk wk) hq wq -> b (hq wq) hk wk", hk=hi, wk=wi)
+        img_to_img = interpolate(img_to_img, size=img_size_out, mode="bilinear")
+        img_to_img = rearrange  (img_to_img, "b (hq wq) hk wk -> b (hk wk) (hq wq)", hq=ho, wq=wo)
+        # convert to 2d x 1d, interpolate, then back to 1d x 1d
+        img_to_txt = rearrange  (img_to_txt, "b (h w) t -> b t h w", h=hi, w=wi)
+        img_to_txt = interpolate(img_to_txt, size=img_size_out, mode="bilinear")
+        img_to_txt = rearrange  (img_to_txt, "b t h w -> b (h w) t")
+
+        # reassemble the mask from blocks
+        out = torch.cat([
+            torch.cat([txt_to_txt, txt_to_img], dim=2),
+            torch.cat([img_to_txt, img_to_img], dim=2)],
+            dim=1
+        )
+        return out
